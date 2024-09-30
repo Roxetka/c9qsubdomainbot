@@ -3,9 +3,20 @@ import logging
 from telegram import Update
 from telegram.ext import CallbackContext, ApplicationBuilder, CommandHandler
 import re
+from flask import Flask
+import threading
 
 # API URL-domen adını dinamik əlavə etmək üçün dəyişdirildi
 SUBDOMAIN_API_URL = 'https://subdomains.whoisxmlapi.com/api/v1?apiKey=at_JoyNq3JxdRZxJDmxfeyL53Yq6WsiI&domainName='
+
+app = Flask(__name__)
+
+def run_flask():
+    app.run(host='0.0.0.0', port=8080)
+
+@app.route('/')
+def home():
+    return "Bot is running!"
 
 def clean_domain(domain):
     domain = re.sub(r'^https?://', '', domain)
@@ -61,7 +72,6 @@ async def subdomain(update: Update, context: CallbackContext) -> None:
         logging.error(f"Xəta, /subdomain funksiyasında: {e}")
         await update.message.reply_text("Xəta baş verdi. Zəhmət olmasa daha sonra yenidən yoxlayın.")
 
-
 if __name__ == '__main__':
     # Bot tokeni əlavə edin
     application = ApplicationBuilder().token('7705392384:AAF_ugqfMOPV601qro-JFXVa2fh9sHvkJSU').build()
@@ -69,6 +79,10 @@ if __name__ == '__main__':
     # /subdomain komutu üçün handler əlavə edin
     subdomain_handler = CommandHandler('subdomain', subdomain)
     application.add_handler(subdomain_handler)
+
+    # Flask serverini ayrıca bir thread-də işə salın
+    flask_thread = threading.Thread(target=run_flask)
+    flask_thread.start()
 
     # Botu işə salın
     application.run_polling()
